@@ -6,18 +6,15 @@
 (def input-path "test/resources")
 (def output-path "test/resources/minified/")
 
-
 (defn clean-output []
   (doseq [f (-> output-path file file-seq rest)]
     (.delete f)))
-
 
 (defmacro run-test [t result]
   `(do
      (clean-output)
      (is
       (= ~result ~t))))
-
 
 (deftest test-minification
   (testing "testing CSS minifcation"
