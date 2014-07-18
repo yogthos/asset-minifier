@@ -4,11 +4,9 @@ a Clojure library to minify CSS and Js resources
 
 ## Usage
 
-Dependency
+### Leiningen Dependency
 
-```clojure
-[]
-```
+[![Clojars Project](http://clojars.org/asset-minifier/latest-version.svg)](http://clojars.org/asset-minifier)
 
 The minifier provides two functions called `minify-css` and `minify-js`, both of these functions accept source path followed by the output target and an optional parameter map. Both functions can take a directory as an input parameter and will minify all the resources found in the directory and subdirectories.
 
