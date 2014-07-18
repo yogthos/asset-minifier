@@ -45,7 +45,6 @@ The `:externs` key can be used to specify the externs file to be used with the a
 
 ;minify all Js resources into site.min.js
 (minify-js "dev/resources/js" "resources/public/js/site.min.js")
-
 ```
 
 The function returns a map containing `:original-size` and `:compressed-size` keys indicating the size of the assets before and after compression. In addition the map may contain `:warnings` and `:errors` keys to indicate any warnings or errors that were issued during compilation.

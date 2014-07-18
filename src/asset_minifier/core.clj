@@ -12,6 +12,11 @@
             CompilerOptions
             JSSourceFile]))
 
+(defn- delete-target [target]
+  (let [f (file target)]
+    (when (.exists f)
+      (.delete (file target)))))
+
 (defn- find-sources [path ext]
   (->> path
        file-seq
@@ -41,7 +46,8 @@
     (minify-css-file tmp target opts)
     (compression-details sources target)))
 
-(defn minify-css [path target & opts]
+(defn minify-css [path target & [opts]]
+  (delete-target target)
   (let [path (file path)]
     (if (.isDirectory path)
       (minify-css-at-path path target opts)
@@ -49,16 +55,19 @@
         (minify-css-file path target opts)
         (compression-details [path] (file target))))))
 
-(defn- set-optimization [optimization options]
+(defn- set-optimization [options optimization]
   (-> optimization
       {:advanced CompilationLevel/ADVANCED_OPTIMIZATIONS
        :simple CompilationLevel/SIMPLE_OPTIMIZATIONS
        :whitespace CompilationLevel/WHITESPACE_ONLY}
-      (.setOptionsForCompilationLevel options)))
+      (.setOptionsForCompilationLevel options))
+  options)
 
 (defn- compile-js [compiler sources externs optimization]
-  (let [options  (doto (CompilerOptions.) (.setOutputCharset "UTF-8"))]
-    (set-optimization optimization options)
+  (let [options  (-> (CompilerOptions.)
+                     (doto (.setOutputCharset "UTF-8"))
+                     (set-optimization optimization))]
+
     (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/SEVERE)
     (.compile compiler
       (map #(JSSourceFile/fromFile %) externs)
@@ -70,10 +79,12 @@
 (defn minify-js [path target & [{:keys [externs optimization]
                                  :or {externs []
                                       optimization :simple}}]]
+  (delete-target target)
   (let [path     (file path)
         sources  (if (.isDirectory path) (find-sources path ".js") [path])
         compiler (com.google.javascript.jscomp.Compiler.)
         result   (compile-js compiler sources externs optimization)]
+
     (with-open [wrt (writer target)]
       (.append wrt (.toSource compiler)))
     (merge
