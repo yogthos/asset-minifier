@@ -17,10 +17,21 @@
     (when (.exists f)
       (.delete (file target)))))
 
-(defn- find-sources [path ext]
-  (->> path
-       file-seq
-       (filter (fn [file] (-> file .getName (.endsWith ext))))))
+(defn- find-assets [f ext]
+  (if (.isDirectory f)
+    (->> f
+         file-seq
+         (filter (fn [file] (-> file .getName (.endsWith ext)))))
+    [f]))
+
+(defn- aggregate [path ext]
+  (if (coll? path)
+   (flatten
+     (for [item path]
+      (let [f (file item)]
+        (find-assets f ext))))
+    (let [f (file path)]
+      (find-assets f ext))))
 
 (defn- compression-details [sources target]
   (let [tmp (File/createTempFile (.getName target) ".gz")]
@@ -36,24 +47,16 @@
               wrt (writer target)]
     (-> rdr (CssCompressor.) (.compress wrt linebreak))))
 
-(defn- minify-css-at-path [path target opts]
-  (let [tmp     (File/createTempFile "temp-sources" ".css")
-        sources (find-sources (file path) ".css")
-        target  (file target)]
-   (with-open [wrt (writer tmp :append true)]
-     (doseq [file (find-sources (file path) ".css")]
-       (.append wrt (slurp file))))
-    (minify-css-file tmp target opts)
-    (compression-details sources target)))
-
 (defn minify-css [path target & [opts]]
   (delete-target target)
-  (let [path (file path)]
-    (if (.isDirectory path)
-      (minify-css-at-path path target opts)
-      (do
-        (minify-css-file path target opts)
-        (compression-details [path] (file target))))))
+  (let [assets (aggregate path ".css")
+        tmp    (File/createTempFile "temp-sources" ".css")
+        target (file target)]
+   (with-open [wrt (writer tmp :append true)]
+     (doseq [file assets]
+       (.append wrt (slurp file))))
+    (minify-css-file tmp target opts)
+    (compression-details assets target)))
 
 (defn- set-optimization [options optimization]
   (-> optimization
@@ -63,30 +66,30 @@
       (.setOptionsForCompilationLevel options))
   options)
 
-(defn- compile-js [compiler sources externs optimization]
+(defn- compile-js [compiler assets externs optimization]
   (let [options  (-> (CompilerOptions.)
                      (doto (.setOutputCharset "UTF-8"))
                      (set-optimization optimization))]
 
-    (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/SEVERE)
     (.compile compiler
       (map #(JSSourceFile/fromFile %) externs)
-      (map #(JSSourceFile/fromFile %) sources)
+      (map #(JSSourceFile/fromFile %) assets)
       options)
     {:warnings (map #(.toString %) (.getWarnings compiler))
      :errors   (map #(.toString %) (.getErrors compiler))}))
 
-(defn minify-js [path target & [{:keys [externs optimization]
-                                 :or {externs []
+(defn minify-js [path target & [{:keys [quiet? externs optimization]
+                                 :or {quiet? false
+                                      externs []
                                       optimization :simple}}]]
+  (if quiet?
+    (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/OFF)
+    (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/SEVERE))
   (delete-target target)
-  (let [path     (file path)
-        sources  (if (.isDirectory path) (find-sources path ".js") [path])
+  (let [assets   (aggregate path ".js")
         compiler (com.google.javascript.jscomp.Compiler.)
-        result   (compile-js compiler sources externs optimization)]
+        result   (compile-js compiler assets externs optimization)]
 
     (with-open [wrt (writer target)]
       (.append wrt (.toSource compiler)))
-    (merge
-     result
-     (compression-details sources (file target)))))
+    (merge result (compression-details assets (file target)))))

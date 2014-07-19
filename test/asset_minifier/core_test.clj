@@ -20,10 +20,10 @@
   (testing "testing CSS minifcation"
     (run-test
       (minify-css input-path (str output-path "output.min.css"))
-      {:original-szie "Uncompressed size: 6951 bytes"
+      {:original-szie "Uncompressed size: 3883 bytes"
        :compressed-size "Compressed size: 3068 bytes minified (10 bytes gzipped)"})
     (run-test
-     (minify-css (str input-path "/css/input1.css") (str output-path "output.min,css"))
+     (minify-css (str input-path "/css/input1.css") (str output-path "output.min.css"))
      {:original-szie "Uncompressed size: 989 bytes", :compressed-size "Compressed size: 783 bytes minified (10 bytes gzipped)"})
 
     (run-test
@@ -58,4 +58,3 @@
        :original-szie "Uncompressed size: 2409 bytes"
        :warnings ["JSC_UNDEFINED_EXTERN_VAR_ERROR. name hljs is not defined in the externs. at test/resources/js/externs.js line 1 : 0"]
        :errors []})))
-
