@@ -4,18 +4,18 @@ a Clojure library to minify CSS and Js resources
 
 ## Usage
 
-### Leiningen Dependency
-
 [![Clojars Project](http://clojars.org/asset-minifier/latest-version.svg)](http://clojars.org/asset-minifier)
+
+```clojure
+(ns my.ns
+  (:require [asset-minifier.core :refer [minify-css minfy-js]]))
+```
 
 The minifier provides two functions called `minify-css` and `minify-js`, both of these functions accept source path followed by the output target and an optional parameter map. The source can be a filename, a directory, or a sequence of directories and or filenames.
 
 The `minify-css` function allows specifying `:linebreak` to force line breaks after a certain number of chracters in the minified CSS.
 
 ```clojure
-(ns my.ns
-  (:require [asset-minifier.core :refer [minify-css minfy-js]]))
-
 ;minify the site.css into site.min.css
 (minify-css "site.css" "site.min.css")
 
