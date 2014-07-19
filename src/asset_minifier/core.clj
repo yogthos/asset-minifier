@@ -38,9 +38,13 @@
     (with-open [in  (FileInputStream. target)
                 out (FileOutputStream. tmp)
                 outGZIP (GZIPOutputStream. out)]
-      (IOUtils/copy in outGZIP)
-      {:original-szie (str "Uncompressed size: " (->> sources (map #(.length %)) (apply +)) " bytes")
-       :compressed-size (str "Compressed size: "(.length target) " bytes minified (" (.length tmp) " bytes gzipped)")})))
+      (IOUtils/copy in outGZIP))
+    (let [uncompressed-length (->> sources (map #(.length %)) (apply +))
+            compressed-length   (.length target)]
+        {:original-szie uncompressed-length
+         :compressed-size compressed-length
+         :summary (str "Uncompressed size: "  " bytes\n"
+                       "Compressed size: "compressed-length " bytes minified (" (.length tmp) " bytes gzipped)")})))
 
 (defn- minify-css-file [source target {:keys [linebreak] :or {linebreak -1}}]
   (with-open [rdr (reader source)

@@ -8,7 +8,7 @@ a Clojure library to minify CSS and Js resources
 
 [![Clojars Project](http://clojars.org/asset-minifier/latest-version.svg)](http://clojars.org/asset-minifier)
 
-The minifier provides two functions called `minify-css` and `minify-js`, both of these functions accept source path followed by the output target and an optional parameter map. Both functions can take a directory as an input parameter and will minify all the resources found in the directory and subdirectories.
+The minifier provides two functions called `minify-css` and `minify-js`, both of these functions accept source path followed by the output target and an optional parameter map. The source can be a filename, a directory, or a sequence of directories and or filenames.
 
 The `minify-css` function allows specifying `:linebreak` to force line breaks after a certain number of chracters in the minified CSS.
 
@@ -19,6 +19,8 @@ The `minify-css` function allows specifying `:linebreak` to force line breaks af
 ;minify the site.css into site.min.css
 (minify-css "site.css" "site.min.css")
 
+;minify the site.css file and any files found under dev/resources/css
+(minify-css ["site.css" "dev/resources/css"] "site.min.css")
 
 (minify-css "site.css" "site.min.css" {:linebreak 80})
 
@@ -36,6 +38,9 @@ The `:externs` key can be used to specify the externs file to be used with the a
 ```clojure
 ;minify site.js into site.min.js
 (minify-js "site.js" "site.min.js")
+
+;minify files found under dev/resources/js and dev/resources/vendor into site.min.js
+(minify-js ["dev/resources/js" "dev/resources/vendor"] "site.min.js")
 
 ;minify site.js into site.min.js with advanced optimizations and jquery externs
 (minify-js "site.js" "site.min.js" {:optimization :advanced
