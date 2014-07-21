@@ -41,7 +41,9 @@
       (IOUtils/copy in outGZIP))
     (let [uncompressed-length (->> sources (map #(.length %)) (apply +))
             compressed-length   (.length target)]
-        {:original-szie uncompressed-length
+        {:sources (map #(.getName %) sources)
+         :target (.getName target)
+         :original-szie uncompressed-length
          :compressed-size compressed-length
          :gzipped-size (.length tmp)})))
 
