@@ -43,7 +43,7 @@
             compressed-length   (.length target)]
         {:original-szie uncompressed-length
          :compressed-size compressed-length
-         :gzipped (.length tmp)})))
+         :gzipped-size (.length tmp)})))
 
 (defn- minify-css-file [source target {:keys [linebreak] :or {linebreak -1}}]
   (with-open [rdr (reader source)
