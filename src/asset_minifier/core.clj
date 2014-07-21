@@ -43,7 +43,7 @@
             compressed-length   (.length target)]
         {:sources (map #(.getName %) sources)
          :target (.getName target)
-         :original-szie uncompressed-length
+         :original-size uncompressed-length
          :compressed-size compressed-length
          :gzipped-size (.length tmp)})))
 
@@ -108,7 +108,7 @@
   [assets & [opts]]
   (into {}
    (for [[target path] assets]
-     [target
+     [[path target]
       (cond
         (.endsWith target ".js")  (minify-js path target opts)
         (.endsWith target ".css") (minify-css path target opts)
