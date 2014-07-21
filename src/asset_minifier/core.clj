@@ -43,8 +43,7 @@
             compressed-length   (.length target)]
         {:original-szie uncompressed-length
          :compressed-size compressed-length
-         :summary (str "Uncompressed size: "  " bytes\n"
-                       "Compressed size: "compressed-length " bytes minified (" (.length tmp) " bytes gzipped)")})))
+         :gzipped (.length tmp)})))
 
 (defn- minify-css-file [source target {:keys [linebreak] :or {linebreak -1}}]
   (with-open [rdr (reader source)
@@ -97,3 +96,18 @@
     (with-open [wrt (writer target)]
       (.append wrt (.toSource compiler)))
     (merge result (compression-details assets (file target)))))
+
+(defn minify
+  "assets are specified using a map where the key is the output file and the value is the asset paths, eg:
+   {\"site.min.css\" \"dev/resources/css\"
+    \"site.min.js\" \"dev/resources/js/site.js\"
+    \"vendor.min.js\" [\"dev/resources/vendor1/js\"
+                       \"dev/resources/vendor2/js\"]}"
+  [assets & [opts]]
+  (into {}
+   (for [[target path] assets]
+     [target
+      (cond
+        (.endsWith target ".js")  (minify-js path target opts)
+        (.endsWith target ".css") (minify-css path target opts)
+        :else (throw (ex-info "unrecognized target" target)))])))
