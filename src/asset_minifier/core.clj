@@ -83,21 +83,29 @@
     {:warnings (map #(.toString %) (.getWarnings compiler))
      :errors   (map #(.toString %) (.getErrors compiler))}))
 
+(defn merge-files [files target]
+  (with-open [out (FileOutputStream. target)]
+    (doseq [file files]
+      (with-open [in (FileInputStream. file)]
+        (IOUtils/copy in out)))))
+
 (defn minify-js [path target & [{:keys [quiet? externs optimization]
                                  :or {quiet? false
                                       externs []
                                       optimization :simple}}]]
-  (if quiet?
-    (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/OFF)
-    (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/SEVERE))
-  (delete-target target)
-  (let [assets   (aggregate path ".js")
-        compiler (com.google.javascript.jscomp.Compiler.)
-        result   (compile-js compiler assets externs optimization)]
-
-    (with-open [wrt (writer target)]
-      (.append wrt (.toSource compiler)))
-    (merge result (compression-details assets (file target)))))
+  (if (= :none optimization)
+    (merge-files (aggregate path ".js") target)
+    (do
+      (if quiet?
+        (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/OFF)
+        (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/SEVERE))
+      (delete-target target)
+      (let [assets   (aggregate path ".js")
+            compiler (com.google.javascript.jscomp.Compiler.)
+            result   (compile-js compiler assets externs optimization)]
+        (with-open [wrt (writer target)]
+          (.append wrt (.toSource compiler)))
+        (merge result (compression-details assets (file target)))))))
 
 (defn minify
   "assets are specified using a map where the key is the output file and the value is the asset paths, eg:
