@@ -1,6 +1,6 @@
 # asset-minifier
 
-a Clojure library to minify CSS and Js resources
+A Clojure library to minify CSS and Js resources, for a Leiningen plugin see [lein-asset-minifier](https://github.com/yogthos/lein-asset-minifier).
 
 ## Usage
 
