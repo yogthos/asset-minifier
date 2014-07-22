@@ -31,7 +31,7 @@ The `minify-css` function allows specifying `:linebreak` to force line breaks af
 The function returns a map containing `:original-size`, `:compressed-size`, and `:summary` keys indicating the size of the assets before and after compression.
 
 
-The `minify-js` function allows specifying the level of optimizations, which can be `:simple`, `:whitespace` or `:advanced` and defaults to simple optimizations.
+The `minify-js` function allows specifying the level of optimizations, which can be `:none`, `:simple`, `:whitespace` or `:advanced` and defaults to simple optimizations.
 
 The `:externs` key can be used to specify the externs file to be used with the advanced optimisations to prevent munging of external functions.
 
