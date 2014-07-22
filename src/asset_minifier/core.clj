@@ -33,13 +33,16 @@
     (let [f (file path)]
       (find-assets f ext))))
 
+(defn total-size [files]
+  (->> files (map #(.length %)) (apply +)))
+
 (defn- compression-details [sources target]
   (let [tmp (File/createTempFile (.getName target) ".gz")]
     (with-open [in  (FileInputStream. target)
                 out (FileOutputStream. tmp)
                 outGZIP (GZIPOutputStream. out)]
       (IOUtils/copy in outGZIP))
-    (let [uncompressed-length (->> sources (map #(.length %)) (apply +))
+    (let [uncompressed-length (total-size sources)
             compressed-length   (.length target)]
         {:sources (map #(.getName %) sources)
          :target (.getName target)
@@ -87,7 +90,10 @@
   (with-open [out (FileOutputStream. target)]
     (doseq [file files]
       (with-open [in (FileInputStream. file)]
-        (IOUtils/copy in out)))))
+        (IOUtils/copy in out))))
+  {:sources files
+   :target target
+   :original-size (total-size files)})
 
 (defn minify-js [path target & [{:keys [quiet? externs optimization]
                                  :or {quiet? false
