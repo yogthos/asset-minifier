@@ -10,7 +10,7 @@
            [com.google.javascript.jscomp
             CompilationLevel
             CompilerOptions
-            JSSourceFile]))
+            SourceFile]))
 
 (defn- delete-target [target]
   (let [f (file target)]
@@ -80,8 +80,8 @@
                      (set-optimization optimization))]
 
     (.compile compiler
-      (map #(JSSourceFile/fromFile %) externs)
-      (map #(JSSourceFile/fromFile %) assets)
+      (map #(SourceFile/fromFile %) externs)
+      (map #(SourceFile/fromFile %) assets)
       options)
     {:warnings (map #(.toString %) (.getWarnings compiler))
      :errors   (map #(.toString %) (.getErrors compiler))}))
