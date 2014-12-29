@@ -1,5 +1,7 @@
 # asset-minifier
 
+[![Continuous Integration status](https://secure.travis-ci.org/yogthos/asset-minifier.png)](http://travis-ci.org/yogthos/asset-minifier)
+
 A Clojure library to minify CSS and Js resources, for a Leiningen plugin see [lein-asset-minifier](https://github.com/yogthos/lein-asset-minifier).
 
 ## Usage
