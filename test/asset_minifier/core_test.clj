@@ -13,7 +13,7 @@
     (.delete file)))
 
 (defn round-gzipped [m]
-  (update-in m [:gzipped-size] #(when % (int (/ % 10)))))
+  (update-in m [:gzipped-size] #(when % (int (/ % 100)))))
 
 (defmacro run-test [fn result]
   `(do
