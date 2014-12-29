@@ -12,13 +12,15 @@
       (.delete file))
     (.delete file)))
 
-(defn round-gzipped [m]
-  (update-in m [:gzipped-size] #(when % (int (/ % 100)))))
+(defn massage-data [m]
+  (-> m
+   (update-in [:sources] set)
+   (update-in [:gzipped-size] #(when % (int (/ % 100))))))
 
 (defmacro run-test [fn result]
   `(do
      (clean-output (file output-path))
-     (is (= (round-gzipped ~result) (round-gzipped ~fn)))))
+     (is (= (massage-data ~result) (massage-data ~fn)))))
 
 (deftest test-minification
 
