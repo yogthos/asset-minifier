@@ -1,5 +1,5 @@
 (ns asset-minifier.core
-  (:require [clojure.java.io :refer [file reader writer]])
+  (:require [clojure.java.io :refer [file reader writer make-parents]])
   (:import com.yahoo.platform.yui.compressor.CssCompressor
            java.util.zip.GZIPOutputStream
            java.io.FileInputStream
@@ -15,7 +15,8 @@
 (defn- delete-target [target]
   (let [f (file target)]
     (when (.exists f)
-      (.delete (file target)))))
+      (.delete f))
+    (make-parents f)))
 
 (defn- find-assets [f ext]
   (if (.isDirectory f)
@@ -86,26 +87,26 @@
     {:warnings (map #(.toString %) (.getWarnings compiler))
      :errors   (map #(.toString %) (.getErrors compiler))}))
 
-(defn merge-files [files target]
+(defn merge-files [sources target]
   (with-open [out (FileOutputStream. target)]
-    (doseq [file files]
+    (doseq [file sources]
       (with-open [in (FileInputStream. file)]
         (IOUtils/copy in out))))
-  {:sources files
-   :target target
-   :original-size (total-size files)})
+  {:sources (map #(.getName %) sources)
+   :target (.getName (file target))
+   :original-size (total-size sources)})
 
 (defn minify-js [path target & [{:keys [quiet? externs optimization]
                                  :or {quiet? false
                                       externs []
                                       optimization :simple}}]]
+  (delete-target target)
   (if (= :none optimization)
     (merge-files (aggregate path ".js") target)
     (do
       (if quiet?
         (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/OFF)
         (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/SEVERE))
-      (delete-target target)
       (let [assets   (aggregate path ".js")
             compiler (com.google.javascript.jscomp.Compiler.)
             result   (compile-js compiler assets externs optimization)]

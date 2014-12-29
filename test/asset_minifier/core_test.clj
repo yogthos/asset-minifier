@@ -1,69 +1,115 @@
 (ns asset-minifier.core-test
   (:require [clojure.test :refer :all]
-            [clojure.java.io :refer [file]]
+            [clojure.java.io :refer [file delete-file]]
             [asset-minifier.core :refer :all]))
 
 (def input-path "test/resources")
-(def output-path "test/resources/minified/")
+(def output-path "target/minified/")
 
-(defn clean-output []
-  (doseq [f (-> output-path file file-seq rest)]
-    (.delete f)))
+(defn clean-output [file]
+  (if (.isDirectory file)
+    (when (reduce #(and %1 (clean-output %2)) true (.listFiles file))
+      (.delete file))
+    (.delete file)))
 
-(defmacro run-test [t result]
+(defmacro run-test [fn result]
   `(do
-     (clean-output)
-     (is
-      (= ~result ~t))))
+     (clean-output (file output-path))
+     (is (= ~result ~fn))))
 
 (deftest test-minification
+
   (testing "testing CSS minifcation"
+
+    ;; minify directory
     (run-test
       (minify-css input-path (str output-path "output.min.css"))
-      {:original-szie 3883
+      {:sources '("input1.css" "input2.css")
+       :target "output.min.css"
+       :original-size 3883
        :compressed-size 3068
-       :summary "Uncompressed size:  bytes\nCompressed size: 3068 bytes minified (1022 bytes gzipped)"})
-    (run-test
-     (minify-css (str input-path "/css/input1.css") (str output-path "output.min.css"))
-     {:original-szie 989
-      :compressed-size 783
-      :summary "Uncompressed size:  bytes\nCompressed size: 783 bytes minified (423 bytes gzipped)"})
+       :gzipped-size 1022})
 
+    ;; minify a file
     (run-test
-     (minify-css (str input-path "/css/input2.css") (str output-path "output.min.css") {:linebreak 80})
-     {:original-szie 2894
-      :compressed-size 2301
-      :summary "Uncompressed size:  bytes\nCompressed size: 2301 bytes minified (725 bytes gzipped)"}))
+      (minify-css (str input-path "/css/input1.css") (str output-path "output.min.css"))
+      {:sources '("input1.css"),
+       :target "output.min.css",
+       :original-size 989,
+       :compressed-size 783,
+       :gzipped-size 423})
+
+    ;; minify a file into non-existent directory
+    (run-test
+      (minify-css (str input-path "/css/input1.css") (str output-path "missing-css-dir/output.min.css"))
+      {:sources '("input1.css"),
+       :target "output.min.css",
+       :original-size 989,
+       :compressed-size 783,
+       :gzipped-size 423})
+    (is (= true (.exists (file (str output-path "missing-css-dir/output.min.css")))))
+
+    ;; minify a file with custom linebreak
+    (run-test
+      (minify-css (str input-path "/css/input2.css") (str output-path "output.min.css") {:linebreak 80})
+      {:sources '("input2.css"),
+       :target "output.min.css",
+       :original-size 2894,
+       :compressed-size 2301,
+       :gzipped-size 725}))
 
   (testing "testing Js minifcation"
+
+    ;; minify directory
     (run-test
-     (minify-js input-path (str output-path "output.min.js"))
-     {:summary "Uncompressed size:  bytes\nCompressed size: 1804 bytes minified (808 bytes gzipped)"
-      :compressed-size 1804
-      :original-szie 2547
-      :warnings []
-      :errors []})
+      (minify-js input-path (str output-path "output.min.js"))
+      {:gzipped-size 808,
+       :compressed-size 1804,
+       :original-size 2547,
+       :target "output.min.js",
+       :sources '("externs.js" "input1.js" "input2.js"),
+       :warnings (),
+       :errors '()})
+
+    ;; minify a file
     (run-test
-     (minify-js (str input-path "/js/input1.js") (str output-path "output.min.js"))
-     {:summary "Uncompressed size:  bytes\nCompressed size: 84 bytes minified (93 bytes gzipped)"
-      :compressed-size 84
-      :original-szie 117
-      :warnings []
-      :errors []})
+      (minify-js (str input-path "/js/input1.js") (str output-path "output.min.js"))
+      {:gzipped-size 93,
+       :compressed-size 84,
+       :original-size 117,
+       :target "output.min.js",
+       :sources '("input1.js"),
+       :warnings '(),
+       :errors '()})
+
+    ;; minify a file into non-existent directory
     (run-test
-     (minify-js input-path (str output-path "output.min.js") {:optimizations :whitespace})
-     {:summary "Uncompressed size:  bytes\nCompressed size: 1804 bytes minified (808 bytes gzipped)"
-      :compressed-size 1804
-      :original-szie 2547
-      :warnings []
-      :errors []})
+      (minify-js (str input-path "/js/input1.js") (str output-path "missing-js-dir/output.min.js"))
+      {:gzipped-size 93,
+       :compressed-size 84,
+       :original-size 117,
+       :target "output.min.js",
+       :sources '("input1.js"),
+       :warnings '(),
+       :errors '()})
+    (is (= true (.exists (file (str output-path "missing-js-dir/output.min.js")))))
+
+    ;; minify a file without optimization
     (run-test
-      (minify-js (str input-path "/js/input2.js")
-                 (str output-path "output.min.js")
-                 {:optimizations :advanced
-                  :externs [(str input-path "/js/externs.js")]})
-      {:summary "Uncompressed size:  bytes\nCompressed size: 1700 bytes minified (776 bytes gzipped)"
-       :compressed-size 1700
-       :original-szie 2409
-       :warnings ["JSC_UNDEFINED_EXTERN_VAR_ERROR. name hljs is not defined in the externs. at test/resources/js/externs.js line 1 : 0"]
-       :errors []})))
+      (minify-js (str input-path "/js/input1.js") (str output-path "output.min.js")
+        {:optimization :none})
+      {:sources '("input1.js"),
+       :target "output.min.js",
+       :original-size 117})
+
+    ;; minify a file with advanced optimization
+    (run-test
+      (minify-js (str input-path "/js/input2.js") (str output-path "output.min.js")
+        {:optimization :advanced :externs [(str input-path "/js/externs.js")]})
+      {:gzipped-size 628,
+       :compressed-size 1265,
+       :original-size 2409,
+       :target "output.min.js",
+       :sources '("input2.js"),
+       :warnings '("JSC_UNDEFINED_EXTERN_VAR_ERROR. name hljs is not defined in the externs. at test/resources/js/externs.js line 1 : 0"),
+       :errors '()})))
