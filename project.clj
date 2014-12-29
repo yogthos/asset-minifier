@@ -1,4 +1,4 @@
-(defproject asset-minifier "0.1.5"
+(defproject asset-minifier "0.1.6"
   :description "a library to minify CSS and Js sources"
   :url "https://github.com/yogthos/asset-minifier"
   :license {:name "Eclipse Public License"
