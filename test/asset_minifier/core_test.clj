@@ -12,10 +12,13 @@
       (.delete file))
     (.delete file)))
 
+(defn round-gzipped [m]
+  (update-in m [:gzipped-size] #(when % (int (/ % 10)))))
+
 (defmacro run-test [fn result]
   `(do
      (clean-output (file output-path))
-     (is (= ~result ~fn))))
+     (is (= (round-gzipped ~result) (round-gzipped ~fn)))))
 
 (deftest test-minification
 
