@@ -15,7 +15,8 @@
 (defn- delete-target [target]
   (let [f (file target)]
     (when (.exists f)
-      (.delete (file target)))))
+      (.delete f))
+    (make-parents f)))
 
 (defn- find-assets [f ext]
   (if (.isDirectory f)

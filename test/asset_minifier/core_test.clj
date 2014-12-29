@@ -4,15 +4,17 @@
             [asset-minifier.core :refer :all]))
 
 (def input-path "test/resources")
-(def output-path "test/resources/minified/")
+(def output-path "target/minified/")
 
-(defn clean-output []
-  (doseq [f (-> output-path file file-seq rest)]
-    (.delete f)))
+(defn clean-output [file]
+  (if (.isDirectory file)
+    (when (reduce #(and %1 (clean-output %2)) true (.listFiles file))
+      (.delete file))
+    (.delete file)))
 
 (defmacro run-test [fn result]
   `(do
-     (clean-output)
+     (clean-output (file output-path))
      (is (= ~result ~fn))))
 
 (deftest test-minification
@@ -36,6 +38,16 @@
        :original-size 989,
        :compressed-size 783,
        :gzipped-size 423})
+
+    ;; minify a file into non-existent directory
+    (run-test
+      (minify-css (str input-path "/css/input1.css") (str output-path "missing-css-dir/output.min.css"))
+      {:sources '("input1.css"),
+       :target "output.min.css",
+       :original-size 989,
+       :compressed-size 783,
+       :gzipped-size 423})
+    (is (= true (.exists (file (str output-path "missing-css-dir/output.min.css")))))
 
     ;; minify a file with custom linebreak
     (run-test
@@ -69,6 +81,18 @@
        :sources '("input1.js"),
        :warnings '(),
        :errors '()})
+
+    ;; minify a file into non-existent directory
+    (run-test
+      (minify-js (str input-path "/js/input1.js") (str output-path "missing-js-dir/output.min.js"))
+      {:gzipped-size 93,
+       :compressed-size 84,
+       :original-size 117,
+       :target "output.min.js",
+       :sources '("input1.js"),
+       :warnings '(),
+       :errors '()})
+    (is (= true (.exists (file (str output-path "missing-js-dir/output.min.js")))))
 
     ;; minify a file without optimization
     (run-test
