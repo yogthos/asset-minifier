@@ -10,7 +10,8 @@
            [com.google.javascript.jscomp
             CompilationLevel
             CompilerOptions
-            SourceFile]))
+            SourceFile
+            CompilerOptions$LanguageMode]))
 
 (defn- delete-target [target]
   (let [f (file target)]
@@ -75,8 +76,12 @@
       (.setOptionsForCompilationLevel options))
   options)
 
-(defn- compile-js [compiler assets externs optimization]
+(defn- compile-js [compiler assets externs optimization language]
   (let [options  (-> (CompilerOptions.)
+                     (doto (.setLanguage (-> language
+                                             (name)
+                                             (.toUpperCase)
+                                             (CompilerOptions$LanguageMode/fromString))))
                      (doto (.setOutputCharset "UTF-8"))
                      (set-optimization optimization))]
 
@@ -96,8 +101,9 @@
    :target (.getName (file target))
    :original-size (total-size sources)})
 
-(defn minify-js [path target & [{:keys [quiet? externs optimization]
+(defn minify-js [path target & [{:keys [quiet? externs optimization language]
                                  :or {quiet? false
+                                      language :ecmascript3
                                       externs []
                                       optimization :simple}}]]
   (delete-target target)
@@ -109,7 +115,7 @@
         (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/SEVERE))
       (let [assets   (aggregate path ".js")
             compiler (com.google.javascript.jscomp.Compiler.)
-            result   (compile-js compiler assets externs optimization)]
+            result   (compile-js compiler assets externs optimization language)]
         (with-open [wrt (writer target)]
           (.append wrt (.toSource compiler)))
         (merge result (compression-details assets (file target)))))))
