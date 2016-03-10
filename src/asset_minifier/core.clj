@@ -7,6 +7,7 @@
            java.io.File
            org.apache.commons.io.IOUtils
            java.util.logging.Level
+           java.nio.charset.Charset
            [com.google.javascript.jscomp
             CompilationLevel
             CompilerOptions
@@ -82,7 +83,7 @@
                                              (name)
                                              (.toUpperCase)
                                              (CompilerOptions$LanguageMode/fromString))))
-                     (doto (.setOutputCharset "UTF-8"))
+                     (doto (.setOutputCharset (Charset/forName "UTF-8")))
                      (set-optimization optimization))]
 
     (.compile compiler
