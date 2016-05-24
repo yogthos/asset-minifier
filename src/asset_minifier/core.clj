@@ -53,7 +53,7 @@
          :compressed-size compressed-length
          :gzipped-size (.length tmp)})))
 
-(defn- minify-css-file [source target {:keys [linebreak] :or {linebreak -1}}]
+(defn minify-css-input [source target {:keys [linebreak] :or {linebreak -1}}]
   (with-open [rdr (reader source)
               wrt (writer target)]
     (-> rdr (CssCompressor.) (.compress wrt linebreak))))
@@ -66,7 +66,7 @@
    (with-open [wrt (writer tmp :append true)]
      (doseq [file assets]
        (.append wrt (slurp file))))
-    (minify-css-file tmp target opts)
+    (minify-css-input tmp target opts)
     (compression-details assets target)))
 
 (defn- set-optimization [options optimization]
