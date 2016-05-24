@@ -29,10 +29,10 @@
 
 (defn- aggregate [path ext]
   (if (coll? path)
-   (flatten
-     (for [item path]
-      (let [f (file item)]
-        (find-assets f ext))))
+    (flatten
+      (for [item path]
+        (let [f (file item)]
+          (find-assets f ext))))
     (let [f (file path)]
       (find-assets f ext))))
 
@@ -46,12 +46,12 @@
                 outGZIP (GZIPOutputStream. out)]
       (IOUtils/copy in outGZIP))
     (let [uncompressed-length (total-size sources)
-            compressed-length   (.length target)]
-        {:sources (map #(.getName %) sources)
-         :target (.getName target)
-         :original-size uncompressed-length
-         :compressed-size compressed-length
-         :gzipped-size (.length tmp)})))
+          compressed-length   (.length target)]
+      {:sources (map #(.getName %) sources)
+       :target (.getName target)
+       :original-size uncompressed-length
+       :compressed-size compressed-length
+       :gzipped-size (.length tmp)})))
 
 (defn minify-css-input [source target {:keys [linebreak] :or {linebreak -1}}]
   (with-open [rdr (reader source)
@@ -63,9 +63,9 @@
   (let [assets (aggregate path ".css")
         tmp    (File/createTempFile "temp-sources" ".css")
         target (file target)]
-   (with-open [wrt (writer tmp :append true)]
-     (doseq [file assets]
-       (.append wrt (slurp file))))
+    (with-open [wrt (writer tmp :append true)]
+      (doseq [file assets]
+        (.append wrt (slurp file))))
     (minify-css-input tmp target opts)
     (compression-details assets target)))
 
@@ -77,19 +77,24 @@
       (.setOptionsForCompilationLevel options))
   options)
 
+(defn- parse-language [language]
+  (-> language
+      (name)
+      (.toUpperCase)
+      (CompilerOptions$LanguageMode/fromString)))
+
 (defn- compile-js [compiler assets externs optimization language]
-  (let [options  (-> (CompilerOptions.)
-                     (doto (.setLanguage (-> language
-                                             (name)
-                                             (.toUpperCase)
-                                             (CompilerOptions$LanguageMode/fromString))))
-                     (doto (.setOutputCharset (Charset/forName "UTF-8")))
+  (let [language (parse-language language)
+        options  (-> (doto (CompilerOptions.)
+                       (.setLanguageIn language)
+                       (.setLanguageOut language)
+                       (.setOutputCharset "UTF-8"))
                      (set-optimization optimization))]
 
     (.compile compiler
-      (map #(SourceFile/fromFile %) externs)
-      (map #(SourceFile/fromFile %) assets)
-      options)
+              (map #(SourceFile/fromFile %) externs)
+              (map #(SourceFile/fromFile %) assets)
+              options)
     {:warnings (map #(.toString %) (.getWarnings compiler))
      :errors   (map #(.toString %) (.getErrors compiler))}))
 
@@ -104,7 +109,7 @@
 
 (defn minify-js [path target & [{:keys [quiet? externs optimization language]
                                  :or {quiet? false
-                                      language :ecmascript3
+                                      language :ecmascript5
                                       externs []
                                       optimization :simple}}]]
   (delete-target target)
@@ -123,15 +128,15 @@
 
 (defn minify
   "assets are specified using a map where the key is the output file and the value is the asset paths, eg:
-   {\"site.min.css\" \"dev/resources/css\"
-    \"site.min.js\" \"dev/resources/js/site.js\"
-    \"vendor.min.js\" [\"dev/resources/vendor1/js\"
-                       \"dev/resources/vendor2/js\"]}"
+  {\"site.min.css\" \"dev/resources/css\"
+  \"site.min.js\" \"dev/resources/js/site.js\"
+  \"vendor.min.js\" [\"dev/resources/vendor1/js\"
+  \"dev/resources/vendor2/js\"]}"
   [assets & [opts]]
   (into {}
-   (for [[target path] assets]
-     [[path target]
-      (cond
-        (.endsWith target ".js")  (minify-js path target opts)
-        (.endsWith target ".css") (minify-css path target opts)
-        :else (throw (ex-info "unrecognized target" target)))])))
+        (for [[target path] assets]
+          [[path target]
+           (cond
+             (.endsWith target ".js")  (minify-js path target opts)
+             (.endsWith target ".css") (minify-css path target opts)
+             :else (throw (ex-info "unrecognized target" target)))])))

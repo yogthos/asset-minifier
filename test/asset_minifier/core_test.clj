@@ -32,7 +32,7 @@
       {:sources '("input1.css" "input2.css")
        :target "output.min.css"
        :original-size 3883
-       :compressed-size 3068
+       :compressed-size 3069
        :gzipped-size 1022})
 
     ;; minify a file
@@ -41,7 +41,7 @@
       {:sources '("input1.css"),
        :target "output.min.css",
        :original-size 989,
-       :compressed-size 783,
+       :compressed-size 784,
        :gzipped-size 423})
 
     ;; minify a file into non-existent directory
@@ -50,7 +50,7 @@
       {:sources '("input1.css"),
        :target "output.min.css",
        :original-size 989,
-       :compressed-size 783,
+       :compressed-size 784,
        :gzipped-size 423})
     (is (= true (.exists (file (str output-path "missing-css-dir/output.min.css")))))
 
@@ -68,53 +68,53 @@
     ;; minify directory
     (run-test
       (minify-js input-path (str output-path "output.min.js"))
-      {:gzipped-size 808,
-       :compressed-size 1804,
-       :original-size 2547,
-       :target "output.min.js",
-       :sources '("externs.js" "input1.js" "input2.js"),
-       :warnings (),
-       :errors '()})
+      {:warnings ()
+       :errors ()
+       :sources ["externs.js" "input1.js" "input2.js"]
+       :target "output.min.js"
+       :original-size 2547
+       :compressed-size 1803
+       :gzipped-size 807})
 
     ;; minify a file
     (run-test
       (minify-js (str input-path "/js/input1.js") (str output-path "output.min.js"))
-      {:gzipped-size 93,
-       :compressed-size 84,
-       :original-size 117,
-       :target "output.min.js",
-       :sources '("input1.js"),
-       :warnings '(),
-       :errors '()})
+      {:warnings ()
+       :errors ()
+       :sources ["input1.js"]
+       :target "output.min.js"
+       :original-size 117
+       :compressed-size 84
+       :gzipped-size 93})
 
     ;; minify a file into non-existent directory
     (run-test
       (minify-js (str input-path "/js/input1.js") (str output-path "missing-js-dir/output.min.js"))
-      {:gzipped-size 93,
-       :compressed-size 84,
-       :original-size 117,
-       :target "output.min.js",
-       :sources '("input1.js"),
-       :warnings '(),
-       :errors '()})
+      {:warnings ()
+       :errors ()
+       :sources ["input1.js"]
+       :target "output.min.js"
+       :original-size 117
+       :compressed-size 84
+       :gzipped-size 93})
     (is (= true (.exists (file (str output-path "missing-js-dir/output.min.js")))))
 
     ;; minify a file without optimization
     (run-test
       (minify-js (str input-path "/js/input1.js") (str output-path "output.min.js")
         {:optimization :none})
-      {:sources '("input1.js"),
-       :target "output.min.js",
+      {:sources ["input1.js"]
+       :target "output.min.js"
        :original-size 117})
 
     ;; minify a file with advanced optimization
     (run-test
       (minify-js (str input-path "/js/input2.js") (str output-path "output.min.js")
         {:optimization :advanced :externs [(str input-path "/js/externs.js")]})
-      {:gzipped-size 628,
-       :compressed-size 1265,
-       :original-size 2409,
-       :target "output.min.js",
-       :sources '("input2.js"),
-       :warnings '("JSC_UNDEFINED_EXTERN_VAR_ERROR. name hljs is not defined in the externs. at test/resources/js/externs.js line 1 : 0"),
-       :errors '()})))
+      {:warnings ["JSC_UNDEFINED_EXTERN_VAR_ERROR. name hljs is not undefined in the externs. at test/resources/js/externs.js line 1 : 0"]
+       :errors ()
+       :sources ["input2.js"]
+       :target "output.min.js"
+       :original-size 2409
+       :compressed-size 1254
+       :gzipped-size 621})))
