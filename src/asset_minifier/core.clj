@@ -88,7 +88,7 @@
         options  (-> (doto (CompilerOptions.)
                        (.setLanguageIn language)
                        (.setLanguageOut language)
-                       (.setOutputCharset "UTF-8"))
+                       (.setOutputCharset (Charset/forName "UTF-8")))
                      (set-optimization optimization))]
 
     (.compile compiler

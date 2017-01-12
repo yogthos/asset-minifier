@@ -73,7 +73,7 @@
        :sources ["externs.js" "input1.js" "input2.js"]
        :target "output.min.js"
        :original-size 2547
-       :compressed-size 1803
+       :compressed-size 1804
        :gzipped-size 807})
 
     ;; minify a file
@@ -111,10 +111,14 @@
     (run-test
       (minify-js (str input-path "/js/input2.js") (str output-path "output.min.js")
         {:optimization :advanced :externs [(str input-path "/js/externs.js")]})
-      {:warnings ["JSC_UNDEFINED_EXTERN_VAR_ERROR. name hljs is not undefined in the externs. at test/resources/js/externs.js line 1 : 0"]
-       :errors ()
-       :sources ["input2.js"]
-       :target "output.min.js"
-       :original-size 2409
-       :compressed-size 1254
-       :gzipped-size 621})))
+        {:errors (),
+         :sources #{"input2.js"},
+         :target "output.min.js",
+         :original-size 2409,
+         :compressed-size 1265,
+         :gzipped-size 600
+         :warnings
+         ["JSC_UNDEFINED_EXTERN_VAR_ERROR. name hljs is not defined in the externs. at test/resources/js/externs.js line 1 : 0"
+          "JSC_INEXISTENT_PROPERTY. Property test never defined on RegExp at test/resources/js/input2.js line 3 : 50"
+          "JSC_WRONG_ARGUMENT_COUNT. Function renderPreview: called with 0 argument(s). Function requires at least 1 argument(s) and no more than 1 argument(s). at test/resources/js/input2.js line 13 : 40"
+          "JSC_INEXISTENT_PROPERTY. Property getTime never defined on Date at test/resources/js/input2.js line 85 : 85"]})))
