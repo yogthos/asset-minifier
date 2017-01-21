@@ -4,6 +4,8 @@
 
 A Clojure library to minify CSS and Js resources, for a Leiningen plugin see [lein-asset-minifier](https://github.com/yogthos/lein-asset-minifier).
 
+The latest version requires ClojureScript 1.9+. If you're on an older version of ClojureScript, then use version `0.2.0` instead.
+
 ## Usage
 
 [![Clojars Project](http://clojars.org/asset-minifier/latest-version.svg)](http://clojars.org/asset-minifier)
