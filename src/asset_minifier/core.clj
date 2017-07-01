@@ -30,9 +30,9 @@
 (defn- aggregate [path ext]
   (if (coll? path)
     (flatten
-      (for [item path]
-        (let [f (file item)]
-          (find-assets f ext))))
+     (for [item path]
+       (let [f (file item)]
+         (find-assets f ext))))
     (let [f (file path)]
       (find-assets f ext))))
 
