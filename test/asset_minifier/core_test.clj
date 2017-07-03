@@ -118,4 +118,9 @@
       :compressed-size 1265,
       :gzipped-size 600
       :warnings
-      ["JSC_UNDEFINED_EXTERN_VAR_ERROR. name hljs is not defined in the externs. at test/resources/js/externs.js line 1 : 0"]})))
+      ["JSC_UNDEFINED_EXTERN_VAR_ERROR. name hljs is not defined in the externs. at test/resources/js/externs.js line 1 : 0"]}))
+
+  (testing "html minification"
+    (run-test
+     (minify-html (str input-path "/html/") (str output-path "html/") {})
+     {:sources '("testCompress.html") :targets '("testCompress.html") :original-size 581 :compressed-size 459 :gzipped-size 256})))

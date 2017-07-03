@@ -1,5 +1,6 @@
 (ns asset-minifier.core
-  (:require [clojure.java.io :refer [file reader writer make-parents]])
+  (:require [clojure.java.io :refer [file reader writer make-parents]]
+            [clj-html-compressor.core :as html-comressor])
   (:import com.yahoo.platform.yui.compressor.CssCompressor
            java.util.zip.GZIPOutputStream
            java.io.FileInputStream
@@ -8,6 +9,7 @@
            org.apache.commons.io.IOUtils
            java.util.logging.Level
            java.nio.charset.Charset
+           clojure.lang.Sequential
            [com.google.javascript.jscomp
             CompilationLevel
             CompilerOptions
@@ -39,12 +41,22 @@
 (defn total-size [files]
   (->> files (map #(.length %)) (apply +)))
 
-(defn- compression-details [sources target]
-  (let [tmp (File/createTempFile (.getName target) ".gz")]
-    (with-open [in  (FileInputStream. target)
-                out (FileOutputStream. tmp)
-                outGZIP (GZIPOutputStream. out)]
-      (IOUtils/copy in outGZIP))
+(defn- create-temp-file [source]
+  (File/createTempFile (.getName source) ".gz"))
+
+(defn- create-temp-files [sources]
+  (map create-temp-file sources))
+
+(defn- gzip [file-in file-out]
+  (with-open [in (FileInputStream. file-in)
+              out (FileOutputStream. file-out)
+              outGZIP (GZIPOutputStream. out)]
+    (IOUtils/copy in outGZIP)))
+
+(defmulti compression-details (fn [& args] (mapv class args)))
+(defmethod compression-details [Sequential File] [sources target]
+  (let [tmp (create-temp-file target)]
+    (gzip target tmp)
     (let [uncompressed-length (total-size sources)
           compressed-length   (.length target)]
       {:sources (map #(.getName %) sources)
@@ -52,6 +64,19 @@
        :original-size uncompressed-length
        :compressed-size compressed-length
        :gzipped-size (.length tmp)})))
+(defmethod compression-details [Sequential Sequential] [sources targets]
+  (let [tmps (create-temp-files sources)]
+    (doseq [source sources
+            tmp tmps]
+      (gzip source tmp))
+    (let [uncompressed-length (total-size sources)
+          compressed-length (total-size targets)
+          gziped-length (total-size tmps)]
+      {:sources (map #(.getName %) sources)
+       :targets (map #(.getName %) targets) ;; Here i use targets
+       :original-size uncompressed-length
+       :compressed-size compressed-length
+       :gzipped-size gziped-length})))
 
 (defn minify-css-input [source target {:keys [linebreak] :or {linebreak -1}}]
   (with-open [rdr (reader source)
@@ -122,9 +147,21 @@
       (let [assets   (aggregate path ".js")
             compiler (com.google.javascript.jscomp.Compiler.)
             result   (compile-js compiler assets externs optimization language)]
-        (with-open [wrt (writer target)]
-          (.append wrt (.toSource compiler)))
+        (spit target (.toSource compiler))
         (merge result (compression-details assets (file target)))))))
+
+(defn minify-html-asset [asset target opts]
+  (let [result (html-comressor/compress (slurp asset))
+        target-filename (str target (.getName asset))]
+    (make-parents target-filename)
+    (spit target-filename result)))
+
+(defn minify-html [path target opts]
+  (delete-target target)
+  (let [assets (aggregate path ".html")]
+    (doseq [asset assets]
+      (minify-html-asset asset target opts))
+    (compression-details assets (aggregate target ".html"))))
 
 (defn minify
   "assets are specified using a map where the key is the output file and the value is the asset paths, eg:

@@ -6,6 +6,7 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [com.yahoo.platform.yui/yuicompressor "2.4.8" :exclusions [rhino/js]]
                  [com.google.javascript/closure-compiler "v20160208"]
+                 [clj-html-compressor "0.0.1"]
                  [commons-io "2.5"]]
   :profiles {:dev {:dependencies [[pjstadig/humane-test-output "0.8.1"]]
                    :injections [(require 'pjstadig.humane-test-output)
