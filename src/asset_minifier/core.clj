@@ -1,5 +1,6 @@
 (ns asset-minifier.core
   (:require [clojure.java.io :refer [file reader writer make-parents]]
+            [clojure.string :as string]
             [clj-html-compressor.core :as html-comressor])
   (:import com.yahoo.platform.yui.compressor.CssCompressor
            java.util.zip.GZIPOutputStream
@@ -16,33 +17,38 @@
             SourceFile
             CompilerOptions$LanguageMode]))
 
+(def js ".js")
+(def css ".css")
+(def html ".html")
+(def gz ".gz")
+
 (defn- delete-target [target]
   (let [f (file target)]
     (when (.exists f)
       (.delete f))
     (make-parents f)))
 
-(defn- find-assets [f ext]
-  (if (.isDirectory f)
-    (->> f
-         file-seq
-         (filter (fn [file] (-> file .getName (.endsWith ext)))))
-    [f]))
+(defn- find-assets [folder ext]
+  (if (not (.isDirectory folder))
+    [folder]
+    (->> folder
+         (file-seq)
+         (filter #(string/ends-with? (.getName %) ext)))))
 
-(defn- aggregate [path ext]
-  (if (coll? path)
-    (flatten
-     (for [item path]
-       (let [f (file item)]
-         (find-assets f ext))))
-    (let [f (file path)]
-      (find-assets f ext))))
+(defn- aggregate [paths ext]
+  (if (not (coll? paths))
+    (aggregate [paths] ext)
+    (->> paths
+         (map #(find-assets (file %) ext))
+         (flatten))))
 
 (defn total-size [files]
-  (->> files (map #(.length %)) (apply +)))
+  (->> files 
+       (map #(.length %))
+       (apply +)))
 
 (defn- create-temp-file [source]
-  (File/createTempFile (.getName source) ".gz"))
+  (File/createTempFile (.getName source) gz))
 
 (defn- create-temp-files [sources]
   (map create-temp-file sources))
@@ -81,12 +87,14 @@
 (defn minify-css-input [source target {:keys [linebreak] :or {linebreak -1}}]
   (with-open [rdr (reader source)
               wrt (writer target)]
-    (-> rdr (CssCompressor.) (.compress wrt linebreak))))
+    (-> rdr 
+        (CssCompressor.) 
+        (.compress wrt linebreak))))
 
 (defn minify-css [path target & [opts]]
   (delete-target target)
-  (let [assets (aggregate path ".css")
-        tmp    (File/createTempFile "temp-sources" ".css")
+  (let [assets (aggregate path css)
+        tmp    (File/createTempFile "temp-sources" css)
         target (file target)]
     (with-open [wrt (writer tmp :append true)]
       (doseq [file assets]
@@ -139,12 +147,12 @@
                                       optimization :simple}}]]
   (delete-target target)
   (if (= :none optimization)
-    (merge-files (aggregate path ".js") target)
+    (merge-files (aggregate path js) target)
     (do
       (if quiet?
         (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/OFF)
         (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/SEVERE))
-      (let [assets   (aggregate path ".js")
+      (let [assets   (aggregate path js)
             compiler (com.google.javascript.jscomp.Compiler.)
             result   (compile-js compiler assets externs optimization language)]
         (spit target (.toSource compiler))
@@ -158,10 +166,10 @@
 
 (defn minify-html [path target opts]
   (delete-target target)
-  (let [assets (aggregate path ".html")]
+  (let [assets (aggregate path html)]
     (doseq [asset assets]
       (minify-html-asset asset target opts))
-    (compression-details assets (aggregate target ".html"))))
+    (compression-details assets (aggregate target html))))
 
 (defn minify
   "assets are specified using a map where the key is the output file and the value is the asset paths, eg:
@@ -174,6 +182,6 @@
         (for [[target path] assets]
           [[path target]
            (cond
-             (.endsWith target ".js")  (minify-js path target opts)
-             (.endsWith target ".css") (minify-css path target opts)
+             (.endsWith target js)  (minify-js path target opts)
+             (.endsWith target css) (minify-css path target opts)
              :else (throw (ex-info "unrecognized target" target)))])))
