@@ -9,6 +9,7 @@
            java.io.File
            org.apache.commons.io.IOUtils
            java.util.logging.Level
+           java.util.Map
            java.nio.charset.Charset
            clojure.lang.Sequential
            [com.google.javascript.jscomp
@@ -171,17 +172,35 @@
       (minify-html-asset asset target opts))
     (compression-details assets (aggregate target html))))
 
-(defn minify
-  "assets are specified using a map where the key is the output file and the value is the asset paths, eg:
+(def asset-type-minifier {:html minify-html
+                          :css minify-css
+                          :js minify-js})
+
+(defmulti minify 
+  "assers are specified using a vector of configs
+  [[:html {:source \"dev/resource/html\" :target \"dev/minified/html\"}]
+   [:css {:source \"dev/resources/css\" :target \"dev/minified/css/styles.min.css\"}]
+   [:js {:source [\"dev/res/js1\", \"dev/res/js2\"] :target \"dev/minified/js/script.min.js\"}]]
+
+  or specified using a map where the key is the output file and the value is the asset paths, eg:
   {\"site.min.css\" \"dev/resources/css\"
   \"site.min.js\" \"dev/resources/js/site.js\"
   \"vendor.min.js\" [\"dev/resources/vendor1/js\"
   \"dev/resources/vendor2/js\"]}"
-  [assets & [opts]]
+  class)
+
+(defmethod minify Sequential [config]
+  (println config)
+  (doseq [[asset-type opts] config]
+    (println asset-type opts)
+    (let [minify-fn (get asset-type-minifier asset-type)]
+      (minify-fn (:source opts) (:target opts) (:opts opts)))))
+
+(defmethod minify Map [assets & [opts]]
   (into {}
-        (for [[target path] assets]
-          [[path target]
-           (cond
-             (.endsWith target js)  (minify-js path target opts)
-             (.endsWith target css) (minify-css path target opts)
-             :else (throw (ex-info "unrecognized target" target)))])))
+    (for [[target path] assets]
+      [[path target]
+       (cond
+         (.endsWith target js)  (minify-js path target opts)
+         (.endsWith target css) (minify-css path target opts)
+         :else (throw (ex-info "unrecognized target" target)))])))
