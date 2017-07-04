@@ -158,11 +158,11 @@
         (spit target (.toSource compiler))
         (merge result (compression-details assets (file target)))))))
 
-(defn minify-html-asset [asset target opts]
+(defn- minify-html-asset [asset target opts]
   (let [result (html-comressor/compress (slurp asset))
-        target-filename (str target (.getName asset))]
-    (make-parents target-filename)
-    (spit target-filename result)))
+        target-file (file target (.getName asset))]
+    (make-parents (.getPath target-file))
+    (spit target-file result)))
 
 (defn minify-html [path target opts]
   (delete-target target)
