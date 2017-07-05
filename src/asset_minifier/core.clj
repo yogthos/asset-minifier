@@ -160,7 +160,7 @@
         (merge result (compression-details assets (file target)))))))
 
 (defn- minify-html-asset [asset target opts]
-  (let [result (html-comressor/compress (slurp asset))
+  (let [result (html-comressor/compress (slurp asset) opts)
         target-file (file target (.getName asset))]
     (make-parents (.getPath target-file))
     (spit target-file result)))
@@ -176,31 +176,13 @@
                           :css minify-css
                           :js minify-js})
 
-(defmulti minify 
+(defn minify 
   "assers are specified using a vector of configs
   [[:html {:source \"dev/resource/html\" :target \"dev/minified/html\"}]
    [:css {:source \"dev/resources/css\" :target \"dev/minified/css/styles.min.css\"}]
-   [:js {:source [\"dev/res/js1\", \"dev/res/js2\"] :target \"dev/minified/js/script.min.js\"}]]
-
-  or specified using a map where the key is the output file and the value is the asset paths, eg:
-  {\"site.min.css\" \"dev/resources/css\"
-  \"site.min.js\" \"dev/resources/js/site.js\"
-  \"vendor.min.js\" [\"dev/resources/vendor1/js\"
-  \"dev/resources/vendor2/js\"]}"
-  class)
-
-(defmethod minify Sequential [config]
-  (println config)
+   [:js {:source [\"dev/res/js1\", \"dev/res/js2\"] :target \"dev/minified/js/script.min.js\"}]]"
+  [config]
   (doseq [[asset-type opts] config]
     (println asset-type opts)
     (let [minify-fn (get asset-type-minifier asset-type)]
       (minify-fn (:source opts) (:target opts) (:opts opts)))))
-
-(defmethod minify Map [assets & [opts]]
-  (into {}
-    (for [[target path] assets]
-      [[path target]
-       (cond
-         (.endsWith target js)  (minify-js path target opts)
-         (.endsWith target css) (minify-css path target opts)
-         :else (throw (ex-info "unrecognized target" target)))])))
