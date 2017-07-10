@@ -1,7 +1,8 @@
 (ns asset-minifier.core
   (:require [clojure.java.io :refer [file reader writer make-parents]]
             [clojure.string :as string]
-            [clj-html-compressor.core :as html-comressor])
+            [clj-html-compressor.core :as html-comressor]
+            [asset-minifier.spec :as spec])
   (:import com.yahoo.platform.yui.compressor.CssCompressor
            java.util.zip.GZIPOutputStream
            java.io.FileInputStream
@@ -172,9 +173,11 @@
       (minify-html-asset asset target opts))
     (compression-details assets (aggregate target html))))
 
-(def asset-type-minifier {:html minify-html
-                          :css minify-css
-                          :js minify-js})
+(defn get-minifier-fn-by-type [asset-type]
+  (case asset-type
+    :html minify-html
+    :css minify-css
+    :js minify-js))
 
 (defn minify 
   "assers are specified using a vector of configs
@@ -182,7 +185,7 @@
    [:css {:source \"dev/resources/css\" :target \"dev/minified/css/styles.min.css\"}]
    [:js {:source [\"dev/res/js1\", \"dev/res/js2\"] :target \"dev/minified/js/script.min.js\"}]]"
   [config]
+  {:pre [(spec/is-valid-config config)]}
   (doseq [[asset-type opts] config]
-    (println asset-type opts)
-    (let [minify-fn (get asset-type-minifier asset-type)]
+    (let [minify-fn (get-minifier-fn-by-type asset-type)]
       (minify-fn (:source opts) (:target opts) (:opts opts)))))
