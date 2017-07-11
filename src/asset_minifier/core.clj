@@ -1,5 +1,8 @@
 (ns asset-minifier.core
-  (:require [clojure.java.io :refer [file reader writer make-parents]])
+  (:require [clojure.java.io :refer [file reader writer make-parents]]
+            [clojure.string :as string]
+            [clj-html-compressor.core :as html-comressor]
+            [asset-minifier.spec :as spec])
   (:import com.yahoo.platform.yui.compressor.CssCompressor
            java.util.zip.GZIPOutputStream
            java.io.FileInputStream
@@ -7,12 +10,19 @@
            java.io.File
            org.apache.commons.io.IOUtils
            java.util.logging.Level
+           java.util.Map
            java.nio.charset.Charset
+           clojure.lang.Sequential
            [com.google.javascript.jscomp
             CompilationLevel
             CompilerOptions
             SourceFile
             CompilerOptions$LanguageMode]))
+
+(def js ".js")
+(def css ".css")
+(def html ".html")
+(def gz ".gz")
 
 (defn- delete-target [target]
   (let [f (file target)]
@@ -20,31 +30,41 @@
       (.delete f))
     (make-parents f)))
 
-(defn- find-assets [f ext]
-  (if (.isDirectory f)
-    (->> f
-         file-seq
-         (filter (fn [file] (-> file .getName (.endsWith ext)))))
-    [f]))
+(defn- find-assets [folder ext]
+  (if (not (.isDirectory folder))
+    [folder]
+    (->> folder
+         (file-seq)
+         (filter #(string/ends-with? (.getName %) ext)))))
 
-(defn- aggregate [path ext]
-  (if (coll? path)
-    (flatten
-      (for [item path]
-        (let [f (file item)]
-          (find-assets f ext))))
-    (let [f (file path)]
-      (find-assets f ext))))
+(defn- aggregate [paths ext]
+  (if (not (coll? paths))
+    (aggregate [paths] ext)
+    (->> paths
+         (map #(find-assets (file %) ext))
+         (flatten))))
 
 (defn total-size [files]
-  (->> files (map #(.length %)) (apply +)))
+  (->> files 
+       (map #(.length %))
+       (apply +)))
 
-(defn- compression-details [sources target]
-  (let [tmp (File/createTempFile (.getName target) ".gz")]
-    (with-open [in  (FileInputStream. target)
-                out (FileOutputStream. tmp)
-                outGZIP (GZIPOutputStream. out)]
-      (IOUtils/copy in outGZIP))
+(defn- create-temp-file [source]
+  (File/createTempFile (.getName source) gz))
+
+(defn- create-temp-files [sources]
+  (map create-temp-file sources))
+
+(defn- gzip [file-in file-out]
+  (with-open [in (FileInputStream. file-in)
+              out (FileOutputStream. file-out)
+              outGZIP (GZIPOutputStream. out)]
+    (IOUtils/copy in outGZIP)))
+
+(defmulti compression-details (fn [& args] (mapv class args)))
+(defmethod compression-details [Sequential File] [sources target]
+  (let [tmp (create-temp-file target)]
+    (gzip target tmp)
     (let [uncompressed-length (total-size sources)
           compressed-length   (.length target)]
       {:sources (map #(.getName %) sources)
@@ -52,16 +72,31 @@
        :original-size uncompressed-length
        :compressed-size compressed-length
        :gzipped-size (.length tmp)})))
+(defmethod compression-details [Sequential Sequential] [sources targets]
+  (let [tmps (create-temp-files sources)]
+    (doseq [source sources
+            tmp tmps]
+      (gzip source tmp))
+    (let [uncompressed-length (total-size sources)
+          compressed-length (total-size targets)
+          gziped-length (total-size tmps)]
+      {:sources (map #(.getName %) sources)
+       :targets (map #(.getName %) targets) ;; Here i use targets
+       :original-size uncompressed-length
+       :compressed-size compressed-length
+       :gzipped-size gziped-length})))
 
 (defn minify-css-input [source target {:keys [linebreak] :or {linebreak -1}}]
   (with-open [rdr (reader source)
               wrt (writer target)]
-    (-> rdr (CssCompressor.) (.compress wrt linebreak))))
+    (-> rdr 
+        (CssCompressor.) 
+        (.compress wrt linebreak))))
 
 (defn minify-css [path target & [opts]]
   (delete-target target)
-  (let [assets (aggregate path ".css")
-        tmp    (File/createTempFile "temp-sources" ".css")
+  (let [assets (aggregate path css)
+        tmp    (File/createTempFile "temp-sources" css)
         target (file target)]
     (with-open [wrt (writer tmp :append true)]
       (doseq [file assets]
@@ -114,29 +149,43 @@
                                       optimization :simple}}]]
   (delete-target target)
   (if (= :none optimization)
-    (merge-files (aggregate path ".js") target)
+    (merge-files (aggregate path js) target)
     (do
       (if quiet?
         (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/OFF)
         (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/SEVERE))
-      (let [assets   (aggregate path ".js")
+      (let [assets   (aggregate path js)
             compiler (com.google.javascript.jscomp.Compiler.)
             result   (compile-js compiler assets externs optimization language)]
-        (with-open [wrt (writer target)]
-          (.append wrt (.toSource compiler)))
+        (spit target (.toSource compiler))
         (merge result (compression-details assets (file target)))))))
 
-(defn minify
-  "assets are specified using a map where the key is the output file and the value is the asset paths, eg:
-  {\"site.min.css\" \"dev/resources/css\"
-  \"site.min.js\" \"dev/resources/js/site.js\"
-  \"vendor.min.js\" [\"dev/resources/vendor1/js\"
-  \"dev/resources/vendor2/js\"]}"
-  [assets & [opts]]
-  (into {}
-        (for [[target path] assets]
-          [[path target]
-           (cond
-             (.endsWith target ".js")  (minify-js path target opts)
-             (.endsWith target ".css") (minify-css path target opts)
-             :else (throw (ex-info "unrecognized target" target)))])))
+(defn- minify-html-asset [asset target opts]
+  (let [result (html-comressor/compress (slurp asset) opts)
+        target-file (file target (.getName asset))]
+    (make-parents (.getPath target-file))
+    (spit target-file result)))
+
+(defn minify-html [path target opts]
+  (delete-target target)
+  (let [assets (aggregate path html)]
+    (doseq [asset assets]
+      (minify-html-asset asset target opts))
+    (compression-details assets (aggregate target html))))
+
+(defn get-minifier-fn-by-type [asset-type]
+  (case asset-type
+    :html minify-html
+    :css minify-css
+    :js minify-js))
+
+(defn minify 
+  "assers are specified using a vector of configs
+  [[:html {:source \"dev/resource/html\" :target \"dev/minified/html\"}]
+   [:css {:source \"dev/resources/css\" :target \"dev/minified/css/styles.min.css\"}]
+   [:js {:source [\"dev/res/js1\", \"dev/res/js2\"] :target \"dev/minified/js/script.min.js\"}]]"
+  [config]
+  {:pre [(spec/is-valid-config config)]}
+  (doseq [[asset-type opts] config]
+    (let [minify-fn (get-minifier-fn-by-type asset-type)]
+      (minify-fn (:source opts) (:target opts) (:opts opts)))))
