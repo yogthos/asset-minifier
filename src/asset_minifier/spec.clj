@@ -1,9 +1,10 @@
 (ns asset-minifier.spec
   (:require [clojure.spec.alpha :as s]))
 
-(s/def ::path (s/or :path string?
-                    :paths (s/+ string?)))
-(s/def ::source ::path)
+(s/def ::path (s/or :path string?))
+(s/def ::paths (s/coll-of ::path))
+(s/def ::source (s/or :path ::path
+                      :paths ::paths))
 (s/def ::target ::path)
 (s/def ::opts map?)
 (s/def ::config-body (s/keys :req-un [::source ::target]
