@@ -14,7 +14,7 @@ The minifier provides three functions called `minify-html`, `minify-css` and `mi
 
 ```clojure
 (ns my.ns
-  (:require [asset-minifier.core :refer [minify-html minify-css minfy-js]]))
+  (:require [asset-minifier.core :refer [minify-html minify-css minfy-js minify]]))
 ```
 
 The `minify-html` function allows specifying config for htmlcompressor. Please refer too [clj-html-compressor](https://github.com/Atsman/clj-html-compressor).
@@ -61,6 +61,16 @@ The `:externs` key can be used to specify the externs file to be used with the a
 ```
 
 The function returns a map containing `:original-size`, `:compressed-size`, and `:gzipped-size` keys indicating the size of the assets before and after compression. In addition the map may contain `:warnings` and `:errors` keys to indicate any warnings or errors that were issued during compilation.
+
+### Minify
+
+The `minify` function can be used intead of functions describet below. It tales vector based config as argument. See example:
+
+```clojure
+(minify [[:html {:source "dev/resource/html" :target "dev/minified/html"}]
+         [:css {:source "dev/resources/css" :target "dev/minified/css/styles.min.css"}]
+         [:js {:source ["dev/res/js1", "dev/res/js2"] :target "dev/minified/js/script.min.js"}]])
+```
 
 ## License
 
