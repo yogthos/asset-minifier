@@ -31,21 +31,21 @@
     (make-parents f)))
 
 (defn- find-assets [folder ext]
-  (if (not (.isDirectory folder))
+  (if-not (.isDirectory folder)
     [folder]
     (->> folder
          (file-seq)
          (filter #(string/ends-with? (.getName %) ext)))))
 
 (defn- aggregate [paths ext]
-  (if (not (coll? paths))
+  (if-not (coll? paths)
     (aggregate [paths] ext)
     (->> paths
          (map #(find-assets (file %) ext))
          (flatten))))
 
 (defn total-size [files]
-  (->> files 
+  (->> files
        (map #(.length %))
        (apply +)))
 
@@ -89,8 +89,8 @@
 (defn minify-css-input [source target {:keys [linebreak] :or {linebreak -1}}]
   (with-open [rdr (reader source)
               wrt (writer target)]
-    (-> rdr 
-        (CssCompressor.) 
+    (-> rdr
+        (CssCompressor.)
         (.compress wrt linebreak))))
 
 (defn minify-css [path target & [opts]]
@@ -179,13 +179,13 @@
     :css minify-css
     :js minify-js))
 
-(defn minify 
+(defn minify
   "assers are specified using a vector of configs
   [[:html {:source \"dev/resource/html\" :target \"dev/minified/html\"}]
    [:css {:source \"dev/resources/css\" :target \"dev/minified/css/styles.min.css\"}]
    [:js {:source [\"dev/res/js1\", \"dev/res/js2\"] :target \"dev/minified/js/script.min.js\"}]]"
   [config]
   {:pre [(spec/is-valid-config config)]}
-  (doseq [[asset-type opts] config]
+  (for [[asset-type opts] config]
     (let [minify-fn (get-minifier-fn-by-type asset-type)]
       (minify-fn (:source opts) (:target opts) (:opts opts)))))
