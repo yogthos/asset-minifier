@@ -186,6 +186,6 @@
    [:js {:source [\"dev/res/js1\", \"dev/res/js2\"] :target \"dev/minified/js/script.min.js\"}]]"
   [config]
   {:pre [(spec/is-valid-config config)]}
-  (doseq [[asset-type opts] config]
+  (for [[asset-type opts] config]
     (let [minify-fn (get-minifier-fn-by-type asset-type)]
       (minify-fn (:source opts) (:target opts) (:opts opts)))))
