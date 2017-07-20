@@ -17,19 +17,19 @@
   (testing "target test"
     (is (s/valid? ::spec/target "target"))
     (is (not (s/valid? ::spec/target ["vector" "of" "targets"]))))
-  
+
   (testing "config body"
     (is (s/valid? ::spec/config-body {:source "str" :target "str"}))
     (is (s/valid? ::spec/config-body {:source ["str"] :target "str"}))
     (is (not (s/valid? ::spec/config-body {:source "source"})))
     (is (not (s/valid? ::spec/config-body {:target "target"}))))
-  
+
   (testing "asset type"
     (is (s/valid? ::spec/asset-type :html))
     (is (s/valid? ::spec/asset-type :css))
     (is (s/valid? ::spec/asset-type :js))
     (is (not (s/valid? ::spec/asset-type :something-else))))
-  
+
   (testing "is-valid-config"
     (is (spec/is-valid-config [[:html {:source "str" :target "str"}]]))
     (is (spec/is-valid-config [[:html {:source "str" :target "str"}]
