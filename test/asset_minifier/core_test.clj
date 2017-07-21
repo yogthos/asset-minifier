@@ -123,4 +123,26 @@
   (testing "html minification"
     (run-test
      (minify-html (str input-path "/html/") (str output-path "html/") {})
-     {:sources '("testCompress.html") :targets '("testCompress.html") :original-size 581 :compressed-size 459 :gzipped-size 256})))
+     {:sources '("testCompress.html") :targets '("testCompress.html") :original-size 581 :compressed-size 459 :gzipped-size 256}))
+
+  (testing "minify function" 
+    (is (= (minify [[:html {:source (str input-path "/html/") :target (str output-path "html/")}]
+                    [:js {:source (str input-path "/js/input1.js") :target (str output-path "output.min.js")}]
+                    [:css {:source (str input-path "/css/input1.css") :target (str output-path "output.min.css")}]])
+            [{:sources '("testCompress.html") 
+              :targets '("testCompress.html") 
+              :original-size 581 
+              :compressed-size 459 
+              :gzipped-size 256}
+             {:warnings ()
+              :errors ()
+              :sources ["input1.js"]
+              :target "output.min.js"
+              :original-size 117
+              :compressed-size 84
+              :gzipped-size 93}
+             {:sources '("input1.css"),
+              :target "output.min.css",
+              :original-size 989,
+              :compressed-size 784,
+              :gzipped-size 424}]))))
