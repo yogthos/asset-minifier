@@ -44,6 +44,25 @@
          (map #(find-assets (file %) ext))
          (flatten))))
 
+(defn- aggregate-with-base-path
+  [paths ext]
+  (if-not (coll? paths)
+    (aggregate-with-base-path [paths] ext)
+    (mapcat (fn [path]
+              (let [f (file path)]
+                (->> (find-assets f ext)
+                     (map #(vector % f)))))
+            paths)))
+
+(defn- relative-path
+  [base asset]
+  (if (.isFile base)
+    (.getName asset)
+    (->> asset
+         (.toPath)
+         (.relativize (.toPath base))
+         (.toString))))
+
 (defn total-size [files]
   (->> files
        (map #(.length %))
@@ -160,18 +179,18 @@
         (spit target (.toSource compiler))
         (merge result (compression-details assets (file target)))))))
 
-(defn- minify-html-asset [asset target opts]
+(defn- minify-html-asset [asset target base-path opts]
   (let [result (html-comressor/compress (slurp asset) opts)
-        target-file (file target (.getName asset))]
+        target-file (file target (relative-path base-path asset))]
     (make-parents (.getPath target-file))
     (spit target-file result)))
 
 (defn minify-html [path target opts]
   (delete-target target)
-  (let [assets (aggregate path html)]
-    (doseq [asset assets]
-      (minify-html-asset asset target opts))
-    (compression-details assets (aggregate target html))))
+  (let [assets (aggregate-with-base-path path html)]
+    (doseq [[asset base-path] assets]
+      (minify-html-asset asset target base-path opts))
+    (compression-details (map first assets) (aggregate target html))))
 
 (defn get-minifier-fn-by-type [asset-type]
   (case asset-type
