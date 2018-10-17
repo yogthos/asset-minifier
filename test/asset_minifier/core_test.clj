@@ -67,9 +67,7 @@
 
     ;; minify directory
     (run-test
-     (minify-js input-path (str output-path "output.min.js")
-                {:language-in :ecmascript6
-                 :language-out :ecmascript5})
+     (minify-js input-path (str output-path "output.min.js"))
      {:warnings ()
       :errors ()
       :sources ["externs.js" "input1.js" "input2.js", "input3.js"]
