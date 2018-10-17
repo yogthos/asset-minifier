@@ -45,6 +45,8 @@ The `minify-js` function allows specifying the level of optimizations, which can
 
 The `:externs` key can be used to specify the externs file to be used with the advanced optimisations to prevent munging of external functions.
 
+The default input language is ecmascript6 with an ecmascript5 output. This can be changed with setting the `:language-out` key to `:ecmascript3` for example. The es6 output is not supported by the closure-compiler currently included.
+
 ```clojure
 ;minify site.js into site.min.js
 (minify-js "site.js" "site.min.js")
@@ -54,7 +56,8 @@ The `:externs` key can be used to specify the externs file to be used with the a
 
 ;minify site.js into site.min.js with advanced optimizations and jquery externs
 (minify-js "site.js" "site.min.js" {:optimization :advanced
-                                    :externs ["jquery.min.js"]})
+                                    :externs ["jquery.min.js"]
+                                    :language-out :ecmascript3})
 
 ;minify all Js resources into site.min.js
 (minify-js "dev/resources/js" "resources/public/js/site.min.js")
