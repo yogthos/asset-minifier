@@ -17,7 +17,8 @@
             CompilationLevel
             CompilerOptions
             SourceFile
-            CompilerOptions$LanguageMode]))
+            CompilerOptions$LanguageMode
+            CommandLineRunner]))
 
 (def js ".js")
 (def css ".css")
@@ -137,16 +138,21 @@
       (.toUpperCase)
       (CompilerOptions$LanguageMode/fromString)))
 
-(defn- compile-js [compiler assets externs optimization language]
-  (let [language (parse-language language)
-        options  (-> (doto (CompilerOptions.)
-                       (.setLanguageIn language)
-                       (.setLanguageOut language)
-                       (.setOutputCharset (Charset/forName "UTF-8")))
-                     (set-optimization optimization))]
+(defn- prepare-externs [options externs]
+  (concat
+   (map #(SourceFile/fromFile %) externs)
+   (CommandLineRunner/getBuiltinExterns options)))
 
+(defn- compile-js [compiler assets externs optimization language-in language-out]
+  (let [language-in     (parse-language language-in)
+        language-out (parse-language language-out)
+        options      (-> (doto (CompilerOptions.)
+                           (.setLanguageIn language-in)
+                           (.setLanguageOut language-out)
+                           (.setOutputCharset (Charset/forName "UTF-8")))
+                         (set-optimization optimization))]
     (.compile compiler
-              (map #(SourceFile/fromFile %) externs)
+              (prepare-externs options externs)
               (map #(SourceFile/fromFile %) assets)
               options)
     {:warnings (map #(.toString %) (.getWarnings compiler))
@@ -161,9 +167,9 @@
    :target (.getName (file target))
    :original-size (total-size sources)})
 
-(defn minify-js [path target & [{:keys [quiet? externs optimization language language-out]
+(defn minify-js [path target & [{:keys [quiet? externs optimization language-in language-out]
                                  :or {quiet? false
-                                      language :ecmascript5
+                                      language-in :ecmascript5
                                       language-out :ecmascript5
                                       externs []
                                       optimization :simple}}]]
@@ -176,7 +182,7 @@
         (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/SEVERE))
       (let [assets   (aggregate path js)
             compiler (com.google.javascript.jscomp.Compiler.)
-            result   (compile-js compiler assets externs optimization language language-out)]
+            result   (compile-js compiler assets externs optimization language-in language-out)]
         (spit target (.toSource compiler))
         (merge result (compression-details assets (file target)))))))
 
