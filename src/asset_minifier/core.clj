@@ -161,9 +161,10 @@
    :target (.getName (file target))
    :original-size (total-size sources)})
 
-(defn minify-js [path target & [{:keys [quiet? externs optimization language]
+(defn minify-js [path target & [{:keys [quiet? externs optimization language language-out]
                                  :or {quiet? false
                                       language :ecmascript5
+                                      language-out :ecmascript5
                                       externs []
                                       optimization :simple}}]]
   (delete-target target)
@@ -175,7 +176,7 @@
         (com.google.javascript.jscomp.Compiler/setLoggingLevel Level/SEVERE))
       (let [assets   (aggregate path js)
             compiler (com.google.javascript.jscomp.Compiler.)
-            result   (compile-js compiler assets externs optimization language)]
+            result   (compile-js compiler assets externs optimization language language-out)]
         (spit target (.toSource compiler))
         (merge result (compression-details assets (file target)))))))
 
