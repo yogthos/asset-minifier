@@ -72,7 +72,7 @@
       :errors ()
       :sources #{"externs.js" "input1.js" "input2.js" "input3.js" "async.js"}
       :target "output.min.js"
-      :original-size 3385
+      :original-size 3461
       :compressed-size 2302
       :gzipped-size 1031})
 

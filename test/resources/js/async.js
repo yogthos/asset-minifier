@@ -30,5 +30,6 @@ processData('https://api.example.com/data')
     });
 
 async function foo() {
-    
+    const evalInfoBefore = {};
+    const bestMoveUCI = evalInfoBefore?.bestmove;
 }
