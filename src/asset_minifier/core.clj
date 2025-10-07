@@ -139,9 +139,10 @@
       (CompilerOptions$LanguageMode/fromString)))
 
 (defn- prepare-externs [options externs]
-  (concat
-   (map #(SourceFile/fromFile %) externs)
-   (CommandLineRunner/getBuiltinExterns options)))
+  (map #(if (instance? File %)
+          (SourceFile/fromFile (.getPath %))
+          (SourceFile/fromFile %))
+       externs))
 
 (defn- compile-js [compiler assets externs optimization language-in language-out]
   (let [language-in     (parse-language language-in)
@@ -153,7 +154,7 @@
                          (set-optimization optimization))]
     (.compile compiler
               (prepare-externs options externs)
-              (map #(SourceFile/fromFile %) assets)
+              (map #(SourceFile/fromFile (.getPath %)) assets)
               options)
     {:warnings (map #(.toString %) (.getWarnings compiler))
      :errors   (map #(.toString %) (.getErrors compiler))}))

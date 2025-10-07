@@ -70,11 +70,11 @@
      (minify-js input-path (str output-path "output.min.js"))
      {:warnings ()
       :errors ()
-      :sources ["externs.js" "input1.js" "input2.js", "input3.js"]
+      :sources ["externs.js" "input1.js" "input2.js", "input3.js", "async.js"]
       :target "output.min.js"
-      :original-size 2586
-      :compressed-size 1841
-      :gzipped-size 807})
+      :original-size 3354
+      :compressed-size 2323
+      :gzipped-size 1000})
 
     ;; minify a file
     (run-test
@@ -111,14 +111,25 @@
     (run-test
      (minify-js (str input-path "/js/input2.js") (str output-path "output.min.js")
                 {:optimization :advanced :externs [(str input-path "/js/externs.js")]})
-     {:errors (),
+     {:warnings
+      ["JSC_UNDEFINED_EXTERN_VAR_ERROR. name hljs is not defined in the externs. at test/resources/js/externs.js line 1 : 0"],
+      :errors
+      ["JSC_UNDEFINED_VARIABLE. variable hljs is undeclared at test/resources/js/externs.js line 1 : 0"
+       "JSC_UNDEFINED_VARIABLE. variable $ is undeclared at test/resources/js/input2.js line 1 : 0"
+       "JSC_UNDEFINED_VARIABLE. variable document is undeclared at test/resources/js/input2.js line 1 : 2"
+       "JSC_UNDEFINED_VARIABLE. variable navigator is undeclared at test/resources/js/input2.js line 3 : 55"
+       "JSC_UNDEFINED_VARIABLE. variable SyntaxHighlighter is undeclared at test/resources/js/input2.js line 10 : 1"
+       "JSC_UNDEFINED_VARIABLE. variable jConfirm is undeclared at test/resources/js/input2.js line 34 : 1"
+       "JSC_UNDEFINED_VARIABLE. variable markdown is undeclared at test/resources/js/input2.js line 45 : 26"
+       "JSC_UNDEFINED_VARIABLE. variable window is undeclared at test/resources/js/input2.js line 52 : 4"
+       "JSC_UNDEFINED_VARIABLE. variable e is undeclared at test/resources/js/input2.js line 54 : 9"
+       "JSC_UNDEFINED_VARIABLE. variable context is undeclared at test/resources/js/input2.js line 75 : 14"
+       "JSC_UNDEFINED_VARIABLE. variable Date is undeclared at test/resources/js/input2.js line 85 : 78"],
       :sources #{"input2.js"},
       :target "output.min.js",
       :original-size 2409,
-      :compressed-size 1418,
-      :gzipped-size 600
-      :warnings
-      ["JSC_UNDEFINED_EXTERN_VAR_ERROR. name hljs is not defined in the externs. at test/resources/js/externs.js line 1 : 0"]}))
+      :compressed-size 1824,
+      :gzipped-size 800}))
 
   (testing "html minification"
     (run-test
