@@ -67,14 +67,15 @@
 
     ;; minify directory
     (run-test
-     (minify-js input-path (str output-path "output.min.js"))
+     (minify-js input-path (str output-path "output.min.js")
+                {:language-in :ecmascript_2017 :language-out :ecmascript_2017})
      {:warnings ()
       :errors ()
       :sources #{"externs.js" "input1.js" "input2.js" "input3.js" "async.js"}
       :target "output.min.js"
-      :original-size 3354
-      :compressed-size 2279
-      :gzipped-size 1019})
+      :original-size 3385
+      :compressed-size 2302
+      :gzipped-size 1031})
 
     ;; minify a file
     (run-test

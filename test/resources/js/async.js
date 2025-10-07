@@ -28,3 +28,7 @@ processData('https://api.example.com/data')
     .catch(error => {
         console.error('Failed to process data:', error);
     });
+
+async function foo() {
+    
+}

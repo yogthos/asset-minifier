@@ -1,4 +1,4 @@
-(defproject asset-minifier "0.2.9"
+(defproject asset-minifier "0.3.0"
   :description "a library to minify CSS and Js sources"
   :url "https://github.com/yogthos/asset-minifier"
   :license {:name "Eclipse Public License"
@@ -9,7 +9,7 @@
                  [com.yahoo.platform.yui/yuicompressor "2.4.8" :exclusions [rhino/js]]
                  [com.google.javascript/closure-compiler "v20250820"]
                  [clj-html-compressor "0.1.1"]
-                 [commons-io "2.6"]]
+                 [commons-io "2.20.0"]]
   :profiles {:dev {:dependencies [[pjstadig/humane-test-output "0.9.0"]]
                    :injections [(require 'pjstadig.humane-test-output)
                                 (pjstadig.humane-test-output/activate!)]}})

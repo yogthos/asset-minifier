@@ -1,2 +1,2 @@
-const foo = "bar"
-console.log({ foo })
+const bar = "bar"
+console.log({ bar })
