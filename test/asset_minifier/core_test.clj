@@ -15,7 +15,7 @@
 (defn massage-data [m]
   (-> m
       (update-in [:sources] set)
-      (update-in [:gzipped-size] #(when % (int (/ % 100))))))
+      (update-in [:gzipped-size] #(when % %))))
 
 (defmacro run-test [fn result]
   `(do
@@ -42,7 +42,7 @@
       :target "output.min.css",
       :original-size 989,
       :compressed-size 784,
-      :gzipped-size 423})
+      :gzipped-size 424})
 
     ;; minify a file into non-existent directory
     (run-test
@@ -51,7 +51,7 @@
       :target "output.min.css",
       :original-size 989,
       :compressed-size 784,
-      :gzipped-size 423})
+      :gzipped-size 424})
     (is (= true (.exists (file (str output-path "missing-css-dir/output.min.css")))))
 
     ;; minify a file with custom linebreak
@@ -70,40 +70,40 @@
      (minify-js input-path (str output-path "output.min.js"))
      {:warnings ()
       :errors ()
-      :sources ["externs.js" "input1.js" "input2.js", "input3.js", "async.js"]
+      :sources #{"externs.js" "input1.js" "input2.js" "input3.js" "async.js"}
       :target "output.min.js"
       :original-size 3354
-      :compressed-size 2323
-      :gzipped-size 1000})
+      :compressed-size 2279
+      :gzipped-size 1019})
 
     ;; minify a file
     (run-test
      (minify-js (str input-path "/js/input1.js") (str output-path "output.min.js"))
      {:warnings ()
       :errors ()
-      :sources ["input1.js"]
+      :sources #{"input1.js"}
       :target "output.min.js"
       :original-size 117
-      :compressed-size 84
-      :gzipped-size 93})
+      :compressed-size 97
+      :gzipped-size 105})
 
     ;; minify a file into non-existent directory
     (run-test
      (minify-js (str input-path "/js/input1.js") (str output-path "missing-js-dir/output.min.js"))
      {:warnings ()
       :errors ()
-      :sources ["input1.js"]
+      :sources #{"input1.js"}
       :target "output.min.js"
       :original-size 117
-      :compressed-size 84
-      :gzipped-size 93})
+      :compressed-size 97
+      :gzipped-size 105})
     (is (= true (.exists (file (str output-path "missing-js-dir/output.min.js")))))
 
     ;; minify a file without optimization
     (run-test
      (minify-js (str input-path "/js/input1.js") (str output-path "output.min.js")
                 {:optimization :none})
-     {:sources ["input1.js"]
+     {:sources #{"input1.js"}
       :target "output.min.js"
       :original-size 117})
 
@@ -128,8 +128,8 @@
       :sources #{"input2.js"},
       :target "output.min.js",
       :original-size 2409,
-      :compressed-size 1824,
-      :gzipped-size 800}))
+      :compressed-size 1837,
+      :gzipped-size 826}))
 
   (testing "html minification"
     (run-test
@@ -147,11 +147,11 @@
               :gzipped-size 256}
              {:warnings ()
               :errors ()
-              :sources ["input1.js"]
+              :sources '("input1.js")
               :target "output.min.js"
               :original-size 117
-              :compressed-size 84
-              :gzipped-size 93}
+              :compressed-size 97
+              :gzipped-size 105}
              {:sources '("input1.css"),
               :target "output.min.css",
               :original-size 989,

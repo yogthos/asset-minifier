@@ -171,7 +171,7 @@
 (defn minify-js [path target & [{:keys [quiet? externs optimization language-in language-out]
                                  :or {quiet? false
                                       language-in :ecmascript6
-                                      language-out :ecmascript5
+                                      language-out :ecmascript6
                                       externs []
                                       optimization :simple}}]]
   (delete-target target)
