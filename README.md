@@ -45,7 +45,7 @@ The `minify-js` function allows specifying the level of optimizations, which can
 
 The `:externs` key can be used to specify the externs file to be used with the advanced optimisations to prevent munging of external functions.
 
-The default input language is ecmascript6 with an ecmascript5 output. This can be changed with setting the `:language-out` key to `:ecmascript3` for example. The es6 output is not supported by the closure-compiler currently included.
+The default input language is `:ecmascript_2020` with an `:ecmascript_2020` output. This can be changed with setting the `:language-out` key to `:ecmascript3` for example.
 
 ```clojure
 ;minify site.js into site.min.js
